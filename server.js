@@ -1,29 +1,36 @@
-var http = require("http");
-var fs = require("fs");
-var url = require("url");
+const http = require("http");
+const fs = require("fs");
 
-http
-  .createServer(function (req, res) {
-    var q = url.parse(req.url, true);
-    var filename;
-    fs.readFile(filename, function (err, data) {
-      if (err) {
-        res.writeHead(404, { "Content-Type": "text/html" });
-        return res.end("404 Not Found");
-      }
-      res.writeHead(200, { "Content-Type": "text/html" });
-      res.write(data);
-      res.end();
+const hostname = "127.0.0.1";
+const port = 3000;
 
-      if (url === "/home") {
-        filename = "home.html";
-      } else if (url === "/about") {
-        filename = "about.html";
-      } else if (url === "/contact") {
-        filename = "contact.html";
-      } else {
-        console.log("Hello world");
-      }
-    });
-  })
-  .listen(8080);
+const server = http.createServer((req, res) => {
+  res.statusCode = 200;
+  res.setHeader("Content-Type", "text/html");
+
+  const routeMap = {
+    "": "home.html",
+    about: "about.html",
+    contact: "contact.html",
+  };
+
+  render(res, routeMap[req.url.slice(1)]);
+});
+
+function render(res, htmlFile) {
+  fs.stat(`./${htmlFile}`, (err, stats) => {
+    res.statusCode = 200;
+    res.setHeader("Content-Type", "text/html");
+
+    if (stats) {
+      fs.createReadStream(htmlFile).pipe(res);
+    } else {
+      res.statusCode = 404;
+      res.end("Sorry, page not found");
+    }
+  });
+}
+
+server.listen(port, hostname, () => {
+  console.log(`Server running at http://${hostname}:${port}/`);
+});
